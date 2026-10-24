@@ -1,0 +1,1649 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tarocchino Bolognese - Calcolatore & Segnapunti</title>
+
+  <!-- PWA Meta Tags & Web App Capabilities -->
+  <meta name="theme-color" content="#0d2820">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Tarocchino">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230d2820'/><circle cx='50' cy='50' r='36' fill='%23133a2e' stroke='%23facc15' stroke-width='4'/><text x='50' y='64' font-size='44' text-anchor='middle'>🃏</text></svg>">
+  <link id="manifest-placeholder" rel="manifest">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Phosphor Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <!-- Google Fonts: Inter & Cinzel Decorative -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            serif: ['Cinzel', 'serif'],
+          },
+          colors: {
+            felt: {
+              700: '#1b4d3e',
+              800: '#133a2e',
+              900: '#0d2820',
+              950: '#071813',
+            },
+            gold: {
+              300: '#fde047',
+              400: '#facc15',
+              500: '#eab308',
+              600: '#ca8a04',
+            },
+            parchment: {
+              100: '#fdfbf7',
+              200: '#f5efe0',
+              300: '#e5d9c2',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom scrollbars and fine touch aesthetics */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(13, 40, 32, 0.6);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(202, 138, 4, 0.4);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(234, 179, 8, 0.8);
+    }
+    .card-tap-target {
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+  </style>
+</head>
+<body class="bg-felt-950 text-parchment-100 min-h-screen flex flex-col font-sans antialiased selection:bg-gold-500 selection:text-felt-950">
+
+  <!-- ==================== HEADER BAR ==================== -->
+  <header class="bg-felt-900 border-b border-gold-500/30 sticky top-0 z-40 shadow-xl backdrop-blur-md bg-opacity-95">
+    <div class="max-w-6xl mx-auto px-3 sm:px-6 py-2.5 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2.5">
+        <span class="text-2xl sm:text-3xl filter drop-shadow">🃏</span>
+        <div>
+          <h1 class="text-base sm:text-lg font-serif font-bold text-gold-300 leading-tight tracking-wider">
+            Tarocchino Bolognese
+          </h1>
+          <p class="text-[10px] sm:text-xs text-parchment-300/80 font-medium">
+            Accademia del Tarocchino • Calcolatore Tallone & Partita
+          </p>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="flex items-center bg-felt-950/70 p-1 rounded-xl border border-gold-500/20 text-xs sm:text-sm font-medium">
+        <button id="nav-calc-btn" onclick="switchTab('calc')" class="px-3 py-1.5 rounded-lg transition-all text-gold-300 bg-felt-800 shadow font-semibold flex items-center gap-1.5">
+          <i class="ph ph-cards text-base"></i>
+          <span>Calcolatore</span>
+        </button>
+        <button id="nav-match-btn" onclick="switchTab('match')" class="px-3 py-1.5 rounded-lg transition-all text-parchment-300 hover:text-white flex items-center gap-1.5">
+          <i class="ph ph-trophy text-base"></i>
+          <span>Partita</span>
+          <span id="header-match-pill" class="text-[10px] px-1.5 py-0.2 rounded-full bg-gold-500/20 text-gold-300 border border-gold-400/30 ml-0.5">800</span>
+        </button>
+        <button id="nav-rules-btn" onclick="switchTab('rules')" class="px-3 py-1.5 rounded-lg transition-all text-parchment-300 hover:text-white flex items-center gap-1.5">
+          <i class="ph ph-book-open text-base"></i>
+          <span class="hidden sm:inline">Regolamento</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ==================== MAIN CONTENT WRAPPER ==================== -->
+  <main class="flex-1 max-w-6xl w-full mx-auto p-3 sm:p-5 flex flex-col gap-4">
+
+    <!-- ============================================================== -->
+    <!-- TAB 1: CALCOLATORE DEL TALLONE DI PRESA                         -->
+    <!-- ============================================================== -->
+    <div id="tab-calc" class="flex flex-col gap-4">
+
+      <!-- Sticky Score Summary Header -->
+      <div class="bg-gradient-to-r from-felt-800 via-felt-900 to-felt-800 rounded-2xl p-3 sm:p-4 border border-gold-500/40 shadow-2xl flex flex-wrap items-center justify-between gap-3 sticky top-14 z-30 backdrop-blur-md">
+        <div class="flex items-center gap-3">
+          <div class="bg-gold-500/10 border-2 border-gold-400/60 rounded-xl px-3 sm:px-4 py-1.5 sm:py-2 text-center min-w-[5.5rem]">
+            <span class="text-[10px] sm:text-xs font-serif uppercase tracking-widest text-gold-400 block font-bold">Totale</span>
+            <span id="display-total-points" class="text-2xl sm:text-3xl font-extrabold text-gold-300 font-mono">0</span>
+            <span class="text-[10px] text-gold-400/70 block">Punti</span>
+          </div>
+          <div class="flex items-center gap-3 text-xs sm:text-sm bg-felt-950/60 py-2 px-3 rounded-xl border border-white/5 overflow-x-auto">
+            <div>
+              <span class="text-parchment-300/70 block text-[10px]">Carte</span>
+              <span id="display-card-count" class="font-bold text-parchment-100 text-sm sm:text-base">0 <span class="text-[10px] text-parchment-300/50">/62</span></span>
+            </div>
+            <div class="h-6 w-px bg-gold-500/20"></div>
+            <div>
+              <span class="text-parchment-300/70 block text-[10px]">Scartini</span>
+              <span id="display-scartini-pts" class="font-bold text-gold-400 text-sm sm:text-base">0 pt</span>
+            </div>
+            <div class="h-6 w-px bg-gold-500/20"></div>
+            <div>
+              <span class="text-parchment-300/70 block text-[10px]">Cricche/Seq</span>
+              <span id="display-comb-pts" class="font-bold text-emerald-400 text-sm sm:text-base">0 pt</span>
+            </div>
+            <div class="h-6 w-px bg-gold-500/20"></div>
+            <div>
+              <span class="text-parchment-300/70 block text-[10px]">Ultima Presa</span>
+              <span id="display-ultima-pts" class="font-bold text-amber-300 text-sm sm:text-base">+0 pt</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick actions -->
+        <div class="flex items-center gap-2 justify-end">
+          <button id="pwa-install-btn" onclick="triggerPWAInstall()" class="hidden px-2.5 py-1.5 rounded-xl border border-gold-400 bg-gold-500/20 text-gold-300 hover:bg-gold-500/30 text-xs font-semibold items-center gap-1.5 transition-all">
+            <i class="ph-bold ph-download-simple"></i>
+            <span>Installa App</span>
+          </button>
+          <button onclick="clearSelection()" title="Deseleziona tutto" class="p-2 sm:px-3 sm:py-1.5 rounded-xl border border-red-500/30 text-red-300 hover:bg-red-500/10 text-xs font-semibold flex items-center gap-1 transition-all">
+            <i class="ph ph-trash text-sm"></i>
+            <span class="hidden sm:inline">Azzera</span>
+          </button>
+          <button onclick="sendToMatchModal()" class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 hover:from-gold-400 hover:to-gold-500 text-felt-950 font-bold text-xs sm:text-sm shadow-md flex items-center gap-1.5 transition-all">
+            <i class="ph-bold ph-plus-circle text-base"></i>
+            <span>Segna a Partita</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Suit Category Filter Pills -->
+      <div class="flex items-center gap-2 overflow-x-auto py-1 scrollbar-thin">
+        <button onclick="filterSuit('all')" id="filter-btn-all" class="suit-filter-btn px-3 py-1.5 rounded-xl text-xs font-medium bg-gold-500 text-felt-950 font-bold border border-gold-400 transition-all whitespace-nowrap">
+          Tutte (62)
+        </button>
+        <button onclick="filterSuit('trionfi')" id="filter-btn-trionfi" class="suit-filter-btn px-3 py-1.5 rounded-xl text-xs font-medium bg-felt-800 text-parchment-200 border border-gold-500/20 hover:border-gold-400 transition-all whitespace-nowrap flex items-center gap-1">
+          <span class="text-gold-400">✨</span> Trionfi (22)
+        </button>
+        <button onclick="filterSuit('danari')" id="filter-btn-danari" class="suit-filter-btn px-3 py-1.5 rounded-xl text-xs font-medium bg-felt-800 text-parchment-200 border border-gold-500/20 hover:border-gold-400 transition-all whitespace-nowrap flex items-center gap-1">
+          <span class="text-yellow-400">🟡</span> Danari (10)
+        </button>
+        <button onclick="filterSuit('coppe')" id="filter-btn-coppe" class="suit-filter-btn px-3 py-1.5 rounded-xl text-xs font-medium bg-felt-800 text-parchment-200 border border-gold-500/20 hover:border-gold-400 transition-all whitespace-nowrap flex items-center gap-1">
+          <span class="text-red-400">🍷</span> Coppe (10)
+        </button>
+        <button onclick="filterSuit('spade')" id="filter-btn-spade" class="suit-filter-btn px-3 py-1.5 rounded-xl text-xs font-medium bg-felt-800 text-parchment-200 border border-gold-500/20 hover:border-gold-400 transition-all whitespace-nowrap flex items-center gap-1">
+          <span class="text-sky-300">⚔️</span> Spade (10)
+        </button>
+        <button onclick="filterSuit('bastoni')" id="filter-btn-bastoni" class="suit-filter-btn px-3 py-1.5 rounded-xl text-xs font-medium bg-felt-800 text-parchment-200 border border-gold-500/20 hover:border-gold-400 transition-all whitespace-nowrap flex items-center gap-1">
+          <span class="text-emerald-300">🪵</span> Bastoni (10)
+        </button>
+      </div>
+
+      <!-- Flag Ultima Presa (+6 punti) Switch -->
+      <div class="bg-gradient-to-r from-felt-800/90 to-felt-900/90 rounded-2xl p-3.5 border-2 border-gold-500/30 shadow-md flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-gold-500/20 border border-gold-400/40 flex items-center justify-center text-gold-300 text-xl shrink-0">
+            🏆
+          </div>
+          <div>
+            <label for="ultima-presa-switch" class="text-xs sm:text-sm font-serif font-bold text-gold-300 cursor-pointer flex items-center gap-1.5">
+              Ultima Presa Vinta
+              <span class="text-[10px] px-2 py-0.5 rounded-full bg-gold-500/20 text-gold-300 border border-gold-400/50 font-mono font-bold">+6 PUNTI</span>
+            </label>
+            <p class="text-[11px] text-parchment-300/70">Attiva se la squadra ha incassato l'ultima mano di gioco (bonus tradizionale)</p>
+          </div>
+        </div>
+
+        <button 
+          id="ultima-presa-switch" 
+          type="button" 
+          role="switch" 
+          aria-checked="false" 
+          onclick="toggleUltimaPresa()" 
+          class="relative inline-flex h-7 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none bg-felt-700/80 p-0.5"
+          style="width: 3.25rem;"
+        >
+          <span id="ultima-presa-toggle-knob" class="pointer-events-none inline-block h-5.5 w-5.5 transform rounded-full bg-parchment-300 shadow ring-0 transition duration-200 ease-in-out translate-x-0"></span>
+        </button>
+      </div>
+
+      <!-- Card Selection Grid -->
+      <div class="bg-felt-800/40 rounded-2xl p-3 sm:p-4 border border-gold-500/20">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-xs sm:text-sm font-serif font-bold text-gold-300 flex items-center gap-2">
+            <i class="ph ph-check-square-offset text-base"></i>
+            Tocca le carte per aggiungerle o rimuoverle dal tallone
+          </h2>
+          <span class="text-[11px] text-parchment-300/60 hidden sm:inline">62 Carte Totali del Mazzo</span>
+        </div>
+
+        <div id="cards-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-2.5">
+          <!-- Populated by JavaScript -->
+        </div>
+      </div>
+
+      <!-- Didactic Score Analysis Accordion (Disamina) -->
+      <div class="bg-felt-900/90 rounded-2xl border border-gold-500/30 overflow-hidden shadow-xl">
+        <button onclick="toggleDisamina()" class="w-full p-4 flex items-center justify-between bg-felt-800/70 hover:bg-felt-800 transition-colors text-left">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-gold-500/20 flex items-center justify-center text-gold-400 font-bold">
+              <i class="ph-bold ph-chalkboard-teacher text-lg"></i>
+            </div>
+            <div>
+              <h3 class="text-sm sm:text-base font-serif font-bold text-gold-300">
+                Disamina Didattica dei Punteggi & Deduzioni
+              </h3>
+              <p class="text-[11px] text-parchment-300/70">
+                Visualizza la suddivisione esatta dei punti: Scartini, Cricche, Sequenze e Contatori
+              </p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span id="disamina-badge" class="text-xs px-2.5 py-0.5 rounded-full bg-felt-950 font-mono text-gold-400 border border-gold-500/30">
+              0 Voci
+            </span>
+            <i id="disamina-arrow" class="ph ph-caret-down text-lg text-gold-400 transition-transform duration-200"></i>
+          </div>
+        </button>
+
+        <div id="disamina-body" class="p-4 border-t border-gold-500/20 text-xs sm:text-sm space-y-3">
+          <div id="disamina-content">
+            <!-- Dynamic explanation injected here -->
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ============================================================== -->
+    <!-- TAB 2: SEGNAPUNTI PARTITA                                       -->
+    <!-- ============================================================== -->
+    <div id="tab-match" class="hidden flex-col gap-4">
+
+      <!-- Settings & Mode Selection Header -->
+      <div class="bg-felt-900 rounded-2xl p-4 border border-gold-500/30 shadow-xl space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-white/10">
+          <div>
+            <h2 class="text-base sm:text-lg font-serif font-bold text-gold-300 flex items-center gap-2">
+              <i class="ph-bold ph-trophy text-xl text-gold-400"></i>
+              Configurazione Partita
+            </h2>
+            <p class="text-xs text-parchment-300/70">
+              Personalizza il traguardo punti e la composizione dei giocatori
+            </p>
+          </div>
+          <button onclick="resetMatchPrompt()" class="px-3 py-1.5 rounded-xl border border-red-500/30 text-red-300 hover:bg-red-500/10 text-xs font-semibold flex items-center gap-1.5 transition-all">
+            <i class="ph ph-arrows-counter-clockwise"></i>
+            Nuova Partita
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+          <!-- Target Score Selector -->
+          <div>
+            <label class="block text-xs font-semibold text-gold-400 mb-1">Traguardo Punti (Specialità)</label>
+            <select id="match-target-select" onchange="changeMatchSettings()" class="w-full bg-felt-950 border border-gold-500/30 rounded-xl px-3 py-2 text-xs sm:text-sm font-medium text-parchment-100 focus:outline-none focus:border-gold-400">
+              <option value="800">Partita a 800 Punti (Classica)</option>
+              <option value="1000">Al Milione (1000 Punti)</option>
+              <option value="500">Partita Rapida (500 Punti)</option>
+              <option value="1200">Partita Lunga (1200 Punti)</option>
+            </select>
+          </div>
+
+          <!-- Format Selector -->
+          <div>
+            <label class="block text-xs font-semibold text-gold-400 mb-1">Formato / Giocatori</label>
+            <select id="match-format-select" onchange="changeMatchSettings()" class="w-full bg-felt-950 border border-gold-500/30 rounded-xl px-3 py-2 text-xs sm:text-sm font-medium text-parchment-100 focus:outline-none focus:border-gold-400">
+              <option value="teams4">4 Giocatori (2 Coppie)</option>
+              <option value="players2">2 Giocatori (Testa a Testa)</option>
+              <option value="players3">3 Giocatori (Tutti contro Tutti)</option>
+            </select>
+          </div>
+
+          <!-- Quick Action -->
+          <div class="flex items-end">
+            <button onclick="openManualAddModal()" class="w-full px-3 py-2 rounded-xl bg-felt-800 hover:bg-felt-700 text-gold-300 border border-gold-500/40 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all">
+              <i class="ph ph-pencil-simple text-sm"></i>
+              Aggiungi Punti Manuali
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scoreboard Cards -->
+      <div id="teams-scoreboard-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Rendered by JS -->
+      </div>
+
+      <!-- Match History Log -->
+      <div class="bg-felt-900 rounded-2xl p-4 border border-gold-500/30 shadow-xl space-y-3">
+        <div class="flex items-center justify-between pb-2 border-b border-white/10">
+          <h3 class="text-sm font-serif font-bold text-gold-300 flex items-center gap-2">
+            <i class="ph ph-clock-counter-clockwise text-base"></i>
+            Cronologia Smazzate
+          </h3>
+          <span id="history-round-count" class="text-xs text-parchment-300/60 font-mono">0 Smazzate</span>
+        </div>
+
+        <div id="match-history-list" class="space-y-2 max-h-80 overflow-y-auto scrollbar-thin pr-1">
+          <div class="text-center py-6 text-parchment-300/50 text-xs italic">
+            Nessuna smazzata registrata finora. Usa "Segna a Partita" dal calcolatore o inserisci i punti manuali.
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ============================================================== -->
+    <!-- TAB 3: REGOLAMENTO DIDATTICO DELL'ACCADEMIA                    -->
+    <!-- ============================================================== -->
+    <div id="tab-rules" class="hidden flex-col gap-4">
+
+      <div class="bg-felt-900 rounded-2xl p-4 sm:p-6 border border-gold-500/30 shadow-xl space-y-6">
+        <div>
+          <span class="text-xs font-mono uppercase text-gold-400 tracking-widest block font-bold">Guida Ufficiale</span>
+          <h2 class="text-xl sm:text-2xl font-serif font-bold text-gold-300">
+            Regole e Norme del Tarocchino Bolognese
+          </h2>
+          <p class="text-xs sm:text-sm text-parchment-300/80 mt-1">
+            Sintesi approvata dall'Accademia del Tarocchino Bolognese con nomenclautra, cricche, sequenze e contatori.
+          </p>
+        </div>
+
+        <!-- 1. Mazzo e Nomenclatura -->
+        <div class="space-y-2">
+          <h3 class="text-base font-serif font-bold text-gold-300 flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-gold-500/20 text-gold-300 text-xs flex items-center justify-center border border-gold-400/40">1</span>
+            Il Mazzo da 62 Carte & Gerarchia
+          </h3>
+          <p class="text-xs sm:text-sm text-parchment-200 leading-relaxed">
+            Il mazzo è composto da <strong>62 Carte Lunghe</strong> divise in 5 pali: <strong>1 Palo di 22 Trionfi</strong> (21 Numeri + 1 Matto) e <strong>4 Pali da 10 carte (Semi)</strong>:
+          </p>
+          <ul class="text-xs text-parchment-300/90 space-y-1.5 pl-4 list-disc">
+            <li><strong>I 4 Tarocchi:</strong> Angelo (XX), Mondo (XIX), Bégato (I) e Matto (senza presa).</li>
+            <li><strong>Le Rosse:</strong> Sole e Luna.</li>
+            <li><strong>La Grande:</strong> L'insieme composto da Angelo, Mondo, Sole e Luna.</li>
+            <li><strong>I Contatori:</strong> Bégato e Matto. Hanno proprietà di sostituire ed aggregarsi alle combinazioni sequenziali.</li>
+            <li><strong>I Numeri di Scavezzo:</strong> I Trionfi numerati dal 16 al 5.</li>
+            <li><strong>I 4 Mori:</strong> I 4 Trionfi con la stessa forza di presa (pari a 4), privi di capostipite.</li>
+            <li><strong>Semi Corti:</strong> Danari e Coppe (Re, Regina, Cavallo, Fante, Asso Buono, 6, 7, 8, 9, 10).</li>
+            <li><strong>Semi Lunghi:</strong> Spade e Bastoni (Re, Regina, Cavallo, Fante, 10, 9, 8, 7, 6, Asso Matto).</li>
+          </ul>
+        </div>
+
+        <!-- 2. Conto degli Scartini -->
+        <div class="space-y-2">
+          <h3 class="text-base font-serif font-bold text-gold-300 flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-gold-500/20 text-gold-300 text-xs flex items-center justify-center border border-gold-400/40">2</span>
+            Conto degli Scartini & Ultima Presa
+          </h3>
+          <p class="text-xs sm:text-sm text-parchment-200 leading-relaxed">
+            Al termine delle smazzate si contano le carte di presa appaiando le <strong>Carte di Valore</strong> con uno <strong>Scartino</strong>:
+          </p>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+            <div class="bg-felt-950/60 p-2.5 rounded-xl border border-white/5 text-center">
+              <span class="block text-gold-400 font-bold">5 Punti</span>
+              <span class="text-parchment-300">Angelo, Mondo, Bégato, Matto, Re</span>
+              <span class="block text-[10px] text-parchment-300/60 mt-0.5">(con 1 scartino)</span>
+            </div>
+            <div class="bg-felt-950/60 p-2.5 rounded-xl border border-white/5 text-center">
+              <span class="block text-gold-400 font-bold">4 Punti</span>
+              <span class="text-parchment-300">Regina</span>
+              <span class="block text-[10px] text-parchment-300/60 mt-0.5">(con 1 scartino)</span>
+            </div>
+            <div class="bg-felt-950/60 p-2.5 rounded-xl border border-white/5 text-center">
+              <span class="block text-gold-400 font-bold">3 Punti</span>
+              <span class="text-parchment-300">Cavallo</span>
+              <span class="block text-[10px] text-parchment-300/60 mt-0.5">(con 1 scartino)</span>
+            </div>
+            <div class="bg-felt-950/60 p-2.5 rounded-xl border border-white/5 text-center">
+              <span class="block text-gold-400 font-bold">2 Punti</span>
+              <span class="text-parchment-300">Fante</span>
+              <span class="block text-[10px] text-parchment-300/60 mt-0.5">(con 1 scartino)</span>
+            </div>
+          </div>
+          <div class="bg-felt-950/70 p-3 rounded-xl border border-gold-500/20 text-xs text-parchment-300 space-y-1">
+            <p>• <strong>Coppia di Scartini:</strong> 1 scartino + 1 scartino = <strong>1 punto</strong>.</p>
+            <p>• <strong>Due Carte di Valore assieme:</strong> Somma dei loro singoli valori meno 1 unità (es. Re + Fante = 5 + 2 - 1 = 6 punti).</p>
+            <p>• <strong>Ultima Presa (6 punti):</strong> Chi vince l'ultima mano di gioco (ultima presa) guadagna il diritto a segnare <strong>6 punti supplementari</strong> nel proprio tallone.</p>
+          </div>
+        </div>
+
+        <!-- 3. Combinazioni Associative -->
+        <div class="space-y-2">
+          <h3 class="text-base font-serif font-bold text-gold-300 flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-gold-500/20 text-gold-300 text-xs flex items-center justify-center border border-gold-400/40">3</span>
+            Combinazioni Associative (Cricche) & Il Criccone
+          </h3>
+          <p class="text-xs sm:text-sm text-parchment-200">
+            Formate da 3 o 4 Carte di Valore omologhe:
+          </p>
+          <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
+            <div class="bg-felt-950/60 p-2 rounded-xl border border-white/5 text-center">
+              <span class="font-bold text-gold-300 block">Tarocchi</span>
+              <span>3: 18 pt</span><br><span class="text-gold-400 font-bold">4: 36 pt</span>
+            </div>
+            <div class="bg-felt-950/60 p-2 rounded-xl border border-white/5 text-center">
+              <span class="font-bold text-gold-300 block">Re</span>
+              <span>3: 17 pt</span><br><span class="text-gold-400 font-bold">4: 34 pt</span>
+            </div>
+            <div class="bg-felt-950/60 p-2 rounded-xl border border-white/5 text-center">
+              <span class="font-bold text-gold-300 block">Regine</span>
+              <span>3: 14 pt</span><br><span class="text-gold-400 font-bold">4: 28 pt</span>
+            </div>
+            <div class="bg-felt-950/60 p-2 rounded-xl border border-white/5 text-center">
+              <span class="font-bold text-gold-300 block">Cavalli</span>
+              <span>3: 13 pt</span><br><span class="text-gold-400 font-bold">4: 26 pt</span>
+            </div>
+            <div class="bg-felt-950/60 p-2 rounded-xl border border-white/5 text-center">
+              <span class="font-bold text-gold-300 block">Fanti</span>
+              <span>3: 12 pt</span><br><span class="text-gold-400 font-bold">4: 24 pt</span>
+            </div>
+          </div>
+          <p class="text-xs text-gold-400 font-semibold bg-gold-500/10 p-2 rounded-lg border border-gold-500/20">
+            ⚡ <strong>Criccone:</strong> 3 o più combinazioni associative raddoppiano il loro valore totale (x2)!
+          </p>
+        </div>
+
+        <!-- 4. Combinazioni Sequenziali -->
+        <div class="space-y-2">
+          <h3 class="text-base font-serif font-bold text-gold-300 flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-gold-500/20 text-gold-300 text-xs flex items-center justify-center border border-gold-400/40">4</span>
+            Combinazioni Sequenziali, Aggregazioni & Proprietà dei Contatori
+          </h3>
+          <p class="text-xs sm:text-sm text-parchment-200 leading-relaxed">
+            Composte da 3 o 4 carte della stessa famiglia con Capostipite indispensabile (<strong>Angelo</strong> per i Numeri, <strong>Re</strong> per le Figure dei Semi). Le famiglie di Assi e Mori non necessitano di capostipite:
+          </p>
+          <ul class="text-xs text-parchment-300/90 space-y-1 pl-4 list-disc">
+            <li><strong>Base:</strong> 3 carte = <strong>10 punti</strong>, 4 carte = <strong>15 punti</strong>.</li>
+            <li><strong>Aggregazioni (+5 pt per carta):</strong> L'Asso si aggrega alle figure del proprio Seme. I Numeri di Scavezzo (dal 16 al 5) e i Mori si aggregano alla Grande. La Grande completa dall'Angelo al Bégato è detta <em>"Grande lunga fino ai calzettini"</em>.</li>
+            <li><strong>I Contatori "Vanno in Terza":</strong> Bégato e Matto possono sostituire la terza carta mancante formando una sequenza valida (Angelo + 1 Grande + 1 Contatore = 10 pt; con 2 Contatori = 15 pt; Re + 1 Figura + 1 Contatore = 10 pt; 2 Assi o 2 Mori + 1 Contatore = 10 pt).</li>
+            <li><strong>Efficacia Continua:</strong> I Contatori non esauriscono la loro efficacia e possono essere impiegati contemporaneamente in tutte le diverse combinazioni sequenziali realizzate!</li>
+            <li><strong>Sequenza Moltiplicativa:</strong> 3 o più combinazioni sequenziali raddoppiano il proprio punteggio complessivo (x2).</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ==================== MODALS ==================== -->
+  <!-- Modal: Invia Punti alla Partita -->
+  <div id="modal-send-match" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-felt-900 border border-gold-500/40 rounded-2xl p-5 max-w-sm w-full space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between pb-2 border-b border-white/10">
+        <h3 class="font-serif font-bold text-gold-300 text-base">Registra Smazzata</h3>
+        <button onclick="closeSendToMatchModal()" class="text-parchment-300 hover:text-white text-lg">✕</button>
+      </div>
+      <div>
+        <span class="text-xs text-parchment-300/70">Punteggio Calcolato:</span>
+        <div class="text-3xl font-serif font-extrabold text-gold-300 font-mono mt-0.5">
+          <span id="modal-pts-display">0</span> <span class="text-sm font-sans text-parchment-300">Punti</span>
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gold-400 mb-1">Assegna alla Squadra / Giocatore:</label>
+        <select id="modal-team-select" class="w-full bg-felt-950 border border-gold-500/30 rounded-xl px-3 py-2 text-xs sm:text-sm text-parchment-100 focus:outline-none focus:border-gold-400">
+          <!-- Populated by JS -->
+        </select>
+      </div>
+      <div class="flex items-center gap-2 pt-2">
+        <button onclick="closeSendToMatchModal()" class="flex-1 py-2 rounded-xl border border-white/20 text-xs font-semibold text-parchment-200 hover:bg-white/5 transition-all">
+          Annulla
+        </button>
+        <button onclick="confirmSendToMatch()" class="flex-1 py-2 rounded-xl bg-gold-500 hover:bg-gold-400 text-felt-950 font-bold text-xs shadow transition-all">
+          Conferma & Segna
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Aggiungi Punti Manuali -->
+  <div id="modal-manual-add" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-felt-900 border border-gold-500/40 rounded-2xl p-5 max-w-sm w-full space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between pb-2 border-b border-white/10">
+        <h3 class="font-serif font-bold text-gold-300 text-base">Punti Manuali</h3>
+        <button onclick="closeManualAddModal()" class="text-parchment-300 hover:text-white text-lg">✕</button>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gold-400 mb-1">Squadra / Giocatore:</label>
+        <select id="manual-team-select" class="w-full bg-felt-950 border border-gold-500/30 rounded-xl px-3 py-2 text-xs sm:text-sm text-parchment-100 focus:outline-none focus:border-gold-400">
+          <!-- Populated by JS -->
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gold-400 mb-1">Punti da aggiungere:</label>
+        <input id="manual-pts-input" type="number" step="1" value="0" class="w-full bg-felt-950 border border-gold-500/30 rounded-xl px-3 py-2 text-base font-mono text-parchment-100 focus:outline-none focus:border-gold-400">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gold-400 mb-1">Nota (opzionale):</label>
+        <input id="manual-note-input" type="text" placeholder="Es. Mano vinta, penalità..." class="w-full bg-felt-950 border border-gold-500/30 rounded-xl px-3 py-2 text-xs text-parchment-100 focus:outline-none focus:border-gold-400">
+      </div>
+      <div class="flex items-center gap-2 pt-2">
+        <button onclick="closeManualAddModal()" class="flex-1 py-2 rounded-xl border border-white/20 text-xs font-semibold text-parchment-200 hover:bg-white/5 transition-all">
+          Annulla
+        </button>
+        <button onclick="confirmManualAdd()" class="flex-1 py-2 rounded-xl bg-gold-500 hover:bg-gold-400 text-felt-950 font-bold text-xs shadow transition-all">
+          Aggiungi
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 pointer-events-none transition-all duration-300 opacity-0 translate-y-3 bg-felt-950 text-gold-300 border border-gold-400/50 px-4 py-2 rounded-xl shadow-2xl text-xs sm:text-sm font-semibold flex items-center gap-2">
+    <i class="ph-fill ph-info"></i>
+    <span id="toast-message">Messaggio</span>
+  </div>
+
+  <!-- ==================== JAVASCRIPT LOGIC ==================== -->
+  <script>
+    /* =====================================================================
+       1. DATABASE COMPLETO DELLE 62 CARTE DEL TAROCCHINO BOLOGNESE
+       ===================================================================== */
+    const CARDS = [
+      /* TRIONFI: Tarocchi (4) */
+      { id: 't_angelo', name: 'Angelo (20)', suit: 'trionfi', category: 'tarocchi', isGrande: true, isTarocco: true, rankValue: 5, rankOrder: 20, badge: 'Tarocco' },
+      { id: 't_mondo',  name: 'Mondo (19)',  suit: 'trionfi', category: 'tarocchi', isGrande: true, isTarocco: true, rankValue: 5, rankOrder: 19, badge: 'Tarocco' },
+      { id: 't_begato', name: 'Bégato (1)',  suit: 'trionfi', category: 'tarocchi', isContatore: true, isTarocco: true, rankValue: 5, rankOrder: 1, badge: 'Contatore' },
+      { id: 't_matto',  name: 'Matto (0)',   suit: 'trionfi', category: 'tarocchi', isContatore: true, isTarocco: true, rankValue: 5, rankOrder: 0, badge: 'Contatore' },
+
+      /* TRIONFI: Rosse della Grande (2) */
+      { id: 't_sole', name: 'Sole (18)', suit: 'trionfi', category: 'rosse', isGrande: true, isScartino: true, rankValue: 1, rankOrder: 18, badge: 'Grande/Rossa' },
+      { id: 't_luna', name: 'Luna (17)', suit: 'trionfi', category: 'rosse', isGrande: true, isScartino: true, rankValue: 1, rankOrder: 17, badge: 'Grande/Rossa' },
+
+      /* TRIONFI: Numeri di Scavezzo (16 al 5) */
+      { id: 't_16', name: 'Trionfo 16', suit: 'trionfi', category: 'scavezzo', isScavezzo: true, scavezzoNum: 16, isScartino: true, rankValue: 1, rankOrder: 16 },
+      { id: 't_15', name: 'Trionfo 15', suit: 'trionfi', category: 'scavezzo', isScavezzo: true, scavezzoNum: 15, isScartino: true, rankValue: 1, rankOrder: 15 },
+      { id: 't_14', name: 'Trionfo 14', suit: 'trionfi', category: 'scavezzo', isScavezzo: true, scavezzoNum: 14, isScartino: true, rankValue: 1, rankOrder: 14 },
+      { id: 't_13', name: 'Trionfo 13', suit: 'trionfi', category: 'scavezzo', isScavezzo: true, scavezzoNum: 13, isScartino: true, rankValue: 1, rankOrder: 13 },
+      { id: 't_12', name: 'Trionfo 12', suit: 'trionfi', category: 'scavezzo', isScavezzo: true, scavezzoNum: 12, isScartino: true, rankValue: 1, rankOrder: 12 },
+      { id: 't_11', name: 'Trionfo 11', suit: 'trionfi', category: 'scavezzo', isScavezzo: true, scavezzoNum: 11, isScartino: true, rankValue: 1, rankOrder: 11 },
+      { id: 't_10', name: 'Trionfo 10', suit: 'trionfi', category: 'scavezzo', isScavezzo: true, scavezzoNum: 10, isScartino: true, rankValue: 1, rankOrder: 10 },
+      { id: 't_9',  name: 'Trionfo 9',  suit: 'trionfi', category: 'scavezzo', isScavezzo: true, scavezzoNum: 9,  isScartino: true, rankValue: 1, rankOrder: 9 },
+      { id: 't_8',  name: 'Trionfo 8',  suit: 'trionfi', category: 'scavezzo', isScavezzo: true, scavezzoNum: 8,  isScartino: true, rankValue: 1, rankOrder: 8 },
+      { id: 't_7',  name: 'Trionfo 7',  suit: 'trionfi', category: 'scavezzo', isScavezzo: true, scavezzoNum: 7,  isScartino: true, rankValue: 1, rankOrder: 7 },
+      { id: 't_6',  name: 'Trionfo 6',  suit: 'trionfi', category: 'scavezzo', isScavezzo: true, scavezzoNum: 6,  isScartino: true, rankValue: 1, rankOrder: 6 },
+      { id: 't_5',  name: 'Trionfo 5',  suit: 'trionfi', category: 'scavezzo', isScavezzo: true, scavezzoNum: 5,  isScartino: true, rankValue: 1, rankOrder: 5 },
+
+      /* TRIONFI: I 4 Mori */
+      { id: 't_moro_1', name: 'Moro 1', suit: 'trionfi', category: 'mori', isMoro: true, isScartino: true, rankValue: 1, rankOrder: 4, badge: 'Moro' },
+      { id: 't_moro_2', name: 'Moro 2', suit: 'trionfi', category: 'mori', isMoro: true, isScartino: true, rankValue: 1, rankOrder: 4, badge: 'Moro' },
+      { id: 't_moro_3', name: 'Moro 3', suit: 'trionfi', category: 'mori', isMoro: true, isScartino: true, rankValue: 1, rankOrder: 4, badge: 'Moro' },
+      { id: 't_moro_4', name: 'Moro 4', suit: 'trionfi', category: 'mori', isMoro: true, isScartino: true, rankValue: 1, rankOrder: 4, badge: 'Moro' },
+
+      /* SEMI CORTI: DANARI */
+      { id: 'd_re',      name: 'Re di Danari',      suit: 'danari', category: 'figure', isFigure: 're',      rankValue: 5, rankOrder: 10, isCapostipite: true },
+      { id: 'd_regina',  name: 'Regina di Danari',  suit: 'danari', category: 'figure', isFigure: 'regina',  rankValue: 4, rankOrder: 9 },
+      { id: 'd_cavallo', name: 'Cavallo di Danari', suit: 'danari', category: 'figure', isFigure: 'cavallo', rankValue: 3, rankOrder: 8 },
+      { id: 'd_fante',   name: 'Fante di Danari',   suit: 'danari', category: 'figure', isFigure: 'fante',   rankValue: 2, rankOrder: 7 },
+      { id: 'd_asso',    name: 'Asso di Danari',    suit: 'danari', category: 'assi',   isAsso: true,        rankValue: 1, rankOrder: 6, isScartino: true, badge: 'Asso Buono' },
+      { id: 'd_6',  name: '6 di Danari',  suit: 'danari', category: 'scartini', isScartino: true, rankValue: 1, rankOrder: 5 },
+      { id: 'd_7',  name: '7 di Danari',  suit: 'danari', category: 'scartini', isScartino: true, rankValue: 1, rankOrder: 4 },
+      { id: 'd_8',  name: '8 di Danari',  suit: 'danari', category: 'scartini', isScartino: true, rankValue: 1, rankOrder: 3 },
+      { id: 'd_9',  name: '9 di Danari',  suit: 'danari', category: 'scartini', isScartino: true, rankValue: 1, rankOrder: 2 },
+      { id: 'd_10', name: '10 di Danari', suit: 'danari', category: 'scartini', isScartino: true, rankValue: 1, rankOrder: 1 },
+
+      /* SEMI CORTI: COPPE */
+      { id: 'c_re',      name: 'Re di Coppe',      suit: 'coppe', category: 'figure', isFigure: 're',      rankValue: 5, rankOrder: 10, isCapostipite: true },
+      { id: 'c_regina',  name: 'Regina di Coppe',  suit: 'coppe', category: 'figure', isFigure: 'regina',  rankValue: 4, rankOrder: 9 },
+      { id: 'c_cavallo', name: 'Cavallo di Coppe', suit: 'coppe', category: 'figure', isFigure: 'cavallo', rankValue: 3, rankOrder: 8 },
+      { id: 'c_fante',   name: 'Fante di Coppe',   suit: 'coppe', category: 'figure', isFigure: 'fante',   rankValue: 2, rankOrder: 7 },
+      { id: 'c_asso',    name: 'Asso di Coppe',    suit: 'coppe', category: 'assi',   isAsso: true,        rankValue: 1, rankOrder: 6, isScartino: true, badge: 'Asso Buono' },
+      { id: 'c_6',  name: '6 di Coppe',  suit: 'coppe', category: 'scartini', isScartino: true, rankValue: 1, rankOrder: 5 },
+      { id: 'c_7',  name: '7 di Coppe',  suit: 'coppe', category: 'scartini', isScartino: true, rankValue: 1, rankOrder: 4 },
+      { id: 'c_8',  name: '8 di Coppe',  suit: 'coppe', category: 'scartini', isScartino: true, rankValue: 1, rankOrder: 3 },
+      { id: 'c_9',  name: '9 di Coppe',  suit: 'coppe', category: 'scartini', isScartino: true, rankValue: 1, rankOrder: 2 },
+      { id: 'c_10', name: '10 di Coppe', suit: 'coppe', category: 'scartini', isScartino: true, rankValue: 1, rankOrder: 1 },
+
+      /* SEMI LUNGHI: SPADE */
+      { id: 's_re',      name: 'Re di Spade',      suit: 'spade', category: 'figure', isFigure: 're',      rankValue: 5, rankOrder: 10, isCapostipite: true },
+      { id: 's_regina',  name: 'Regina di Spade',  suit: 'spade', category: 'figure', isFigure: 'regina',  rankValue: 4, rankOrder: 9 },
+      { id: 's_cavallo', name: 'Cavallo di Spade', suit: 'spade', category: 'figure', isFigure: 'cavallo', rankValue: 3, rankOrder: 8 },
+      { id: 's_fante',   name: 'Fante di Spade',   suit: 'spade', category: 'figure', isFigure: 'fante',   rankValue: 2, rankOrder: 7 },
+      { id: 's_10', name: '10 di Spade', suit: 'spade', category: 'scartini', isScartino: true, rankValue: 1, rankOrder: 6 },
+      { id: 's_9',  name: '9 di Spade',  suit: 'spade', category: 'scartini', isScartino: true, rankValue: 1, rankOrder: 5 },
+      { id: 's_8',  name: '8 di Spade',  suit: 'spade', category: 'scartini', isScartino: true, rankValue: 1, rankOrder: 4 },
+      { id: 's_7',  name: '7 di Spade',  suit: 'spade', category: 'scartini', isScartino: true, rankValue: 1, rankOrder: 3 },
+      { id: 's_6',  name: '6 di Spade',  suit: 'spade', category: 'scartini', isScartino: true, rankValue: 1, rankOrder: 2 },
+      { id: 's_asso', name: 'Asso di Spade', suit: 'spade', category: 'assi', isAsso: true, rankValue: 1, rankOrder: 1, isScartino: true, badge: 'Asso Matto' },
+
+      /* SEMI LUNGHI: BASTONI */
+      { id: 'b_re',      name: 'Re di Bastoni',      suit: 'bastoni', category: 'figure', isFigure: 're',      rankValue: 5, rankOrder: 10, isCapostipite: true },
+      { id: 'b_regina',  name: 'Regina di Bastoni',  suit: 'bastoni', category: 'figure', isFigure: 'regina',  rankValue: 4, rankOrder: 9 },
+      { id: 'b_cavallo', name: 'Cavallo di Bastoni', suit: 'bastoni', category: 'figure', isFigure: 'cavallo', rankValue: 3, rankOrder: 8 },
+      { id: 'b_fante',   name: 'Fante di Bastoni',   suit: 'bastoni', category: 'figure', isFigure: 'fante',   rankValue: 2, rankOrder: 7 },
+      { id: 'b_10', name: '10 di Bastoni', suit: 'bastoni', category: 'scartini', isScartino: true, rankValue: 1, rankOrder: 6 },
+      { id: 'b_9',  name: '9 di Bastoni',  suit: 'bastoni', category: 'scartini', isScartino: true, rankValue: 1, rankOrder: 5 },
+      { id: 'b_8',  name: '8 di Bastoni',  suit: 'bastoni', category: 'scartini', isScartino: true, rankValue: 1, rankOrder: 4 },
+      { id: 'b_7',  name: '7 di Bastoni',  suit: 'bastoni', category: 'scartini', isScartino: true, rankValue: 1, rankOrder: 3 },
+      { id: 'b_6',  name: '6 di Bastoni',  suit: 'bastoni', category: 'scartini', isScartino: true, rankValue: 1, rankOrder: 2 },
+      { id: 'b_asso', name: 'Asso di Bastoni', suit: 'bastoni', category: 'assi', isAsso: true, rankValue: 1, rankOrder: 1, isScartino: true, badge: 'Asso Matto' }
+    ];
+
+    /* Lookup Dictionary */
+    const CARD_MAP = {};
+    CARDS.forEach(c => { CARD_MAP[c.id] = c; });
+
+    /* State Variables */
+    const selectedCards = new Set();
+    let currentFilter = 'all';
+    let hasUltimaPresa = false;
+    let isDisaminaOpen = false;
+
+    /* Match State */
+    let matchConfig = {
+      target: 800,
+      format: 'teams4',
+      teams: [
+        { id: 't1', name: 'Coppia A (Noi)', score: 0 },
+        { id: 't2', name: 'Coppia B (Loro)', score: 0 }
+      ]
+    };
+    let matchRounds = [];
+
+    /* =====================================================================
+       2. CARD SELECTION & FILTERING
+       ===================================================================== */
+    function filterSuit(suit) {
+      currentFilter = suit;
+      document.querySelectorAll('.suit-filter-btn').forEach(btn => {
+        btn.classList.remove('bg-gold-500', 'text-felt-950', 'font-bold');
+        btn.classList.add('bg-felt-800', 'text-parchment-200');
+      });
+      const activeBtn = document.getElementById(`filter-btn-${suit}`);
+      if (activeBtn) {
+        activeBtn.classList.remove('bg-felt-800', 'text-parchment-200');
+        activeBtn.classList.add('bg-gold-500', 'text-felt-950', 'font-bold');
+      }
+
+      CARDS.forEach(c => {
+        const el = document.getElementById(`card-btn-${c.id}`);
+        if (!el) return;
+        if (suit === 'all' || c.suit === suit) {
+          el.style.display = '';
+        } else {
+          el.style.display = 'none';
+        }
+      });
+    }
+
+    function toggleCard(cardId) {
+      if (selectedCards.has(cardId)) {
+        selectedCards.delete(cardId);
+      } else {
+        selectedCards.add(cardId);
+      }
+      updateUI();
+    }
+
+    function clearSelection() {
+      selectedCards.clear();
+      hasUltimaPresa = false;
+      syncUltimaPresaSwitch();
+      updateUI();
+      showToast("Selezione azzerata");
+    }
+
+    function toggleUltimaPresa() {
+      hasUltimaPresa = !hasUltimaPresa;
+      syncUltimaPresaSwitch();
+      updateUI();
+      showToast(hasUltimaPresa ? "Ultima Presa assegnata (+6 punti)" : "Ultima Presa disattivata");
+    }
+
+    function syncUltimaPresaSwitch() {
+      const sw = document.getElementById('ultima-presa-switch');
+      const knob = document.getElementById('ultima-presa-toggle-knob');
+      if (!sw || !knob) return;
+      if (hasUltimaPresa) {
+        sw.setAttribute('aria-checked', 'true');
+        sw.classList.remove('bg-felt-700/80');
+        sw.classList.add('bg-gradient-to-r', 'from-gold-600', 'to-gold-400');
+        knob.classList.remove('translate-x-0', 'bg-parchment-300');
+        knob.classList.add('translate-x-6', 'bg-felt-900');
+      } else {
+        sw.setAttribute('aria-checked', 'false');
+        sw.classList.add('bg-felt-700/80');
+        sw.classList.remove('bg-gradient-to-r', 'from-gold-600', 'to-gold-400');
+        knob.classList.add('translate-x-0', 'bg-parchment-300');
+        knob.classList.remove('translate-x-6', 'bg-felt-900');
+      }
+    }
+
+    /* =====================================================================
+       3. TAROCCHINO BOLOGNESE POINT CALCULATION ENGINE
+       ===================================================================== */
+    function calculatePoints(cardIdSet) {
+      const picked = Array.from(cardIdSet).map(id => CARD_MAP[id]);
+      
+      const disamina = {
+        scartiniBreakdown: [],
+        scartiniTotal: 0,
+        associativeBreakdown: [],
+        associativeSubtotal: 0,
+        hasCriccone: false,
+        associativeTotal: 0,
+        sequentialBreakdown: [],
+        sequentialSubtotal: 0,
+        hasSequenzaMult: false,
+        sequentialTotal: 0,
+        ultimaPresaPoints: hasUltimaPresa ? 6 : 0,
+        grandTotal: 0
+      };
+
+      if (picked.length === 0 && !hasUltimaPresa) {
+        return disamina;
+      }
+
+      /* -------------------------------------------------------------
+         A. CONTO DEGLI SCARTINI (Regola 2.1)
+         20 Carte di Valore: 4 Tarocchi + 16 Figure dei 4 semi.
+         Accoppiate ciascuna ad 1 scartino.
+         Eccedenza tra scartini appaiati a due a due = 1 pt.
+         Eccedenza carte di valore tra loro = somma singoli valori - 1 pt.
+         ------------------------------------------------------------- */
+      const valCards = picked.filter(c => c.rankValue > 1);
+      const scartiniCards = picked.filter(c => c.rankValue === 1);
+
+      const pairsCount = Math.min(valCards.length, scartiniCards.length);
+      let scartiniPoints = 0;
+
+      // Appaiamento 1 Carta di Valore + 1 Scartino
+      for (let i = 0; i < pairsCount; i++) {
+        scartiniPoints += valCards[i].rankValue;
+      }
+
+      // Eccedenza Scartini (coppie di scartini a 1 punto)
+      const extraScartini = scartiniCards.length - pairsCount;
+      const scartiniPairs = Math.floor(extraScartini / 2);
+      scartiniPoints += scartiniPairs;
+
+      // Eccedenza Carte di Valore (accoppiate tra loro: v1 + v2 - 1)
+      const extraValCards = valCards.slice(pairsCount);
+      let extraValPoints = 0;
+      for (let i = 0; i < extraValCards.length; i += 2) {
+        if (i + 1 < extraValCards.length) {
+          extraValPoints += (extraValCards[i].rankValue + extraValCards[i + 1].rankValue - 1);
+        } else {
+          // Carta singola spaiata senza compagno (vale il suo rank netto - 1)
+          extraValPoints += Math.max(1, extraValCards[i].rankValue - 1);
+        }
+      }
+      scartiniPoints += extraValPoints;
+
+      disamina.scartiniTotal = scartiniPoints;
+      disamina.scartiniBreakdown = {
+        valCardsCount: valCards.length,
+        scartiniCardsCount: scartiniCards.length,
+        pairedCount: pairsCount,
+        extraScartini: extraScartini,
+        extraScartiniPairs: scartiniPairs,
+        extraValCardsCount: extraValCards.length,
+        extraValPoints: extraValPoints
+      };
+
+      /* -------------------------------------------------------------
+         B. COMBINAZIONI ASSOCIATIVE (CRICCHE) (Regola 2.2.1)
+         3 o 4 carte omologhe:
+         - Tarocchi (Angelo, Mondo, Bégato, Matto): 3 = 18 pt, 4 = 36 pt
+         - Re: 3 = 17 pt, 4 = 34 pt
+         - Regine: 3 = 14 pt, 4 = 28 pt
+         - Cavalli: 3 = 13 pt, 4 = 26 pt
+         - Fanti: 3 = 12 pt, 4 = 24 pt
+         ------------------------------------------------------------- */
+      const pickedTarocchi = picked.filter(c => c.isTarocco);
+      if (pickedTarocchi.length === 3) {
+        disamina.associativeBreakdown.push({ name: '3 Tarocchi', cards: pickedTarocchi.map(c => c.name), pts: 18 });
+      } else if (pickedTarocchi.length === 4) {
+        disamina.associativeBreakdown.push({ name: '4 Tarocchi (Tutti)', cards: pickedTarocchi.map(c => c.name), pts: 36 });
+      }
+
+      const figTypes = [
+        { type: 're', label: 'Re', pts3: 17, pts4: 34 },
+        { type: 'regina', label: 'Regine', pts3: 14, pts4: 28 },
+        { type: 'cavallo', label: 'Cavalli', pts3: 13, pts4: 26 },
+        { type: 'fante', label: 'Fanti', pts3: 12, pts4: 24 }
+      ];
+
+      figTypes.forEach(ft => {
+        const matchingFigs = picked.filter(c => c.isFigure === ft.type);
+        if (matchingFigs.length === 3) {
+          disamina.associativeBreakdown.push({ name: `3 ${ft.label}`, cards: matchingFigs.map(c => c.name), pts: ft.pts3 });
+        } else if (matchingFigs.length === 4) {
+          disamina.associativeBreakdown.push({ name: `4 ${ft.label} (Tutti)`, cards: matchingFigs.map(c => c.name), pts: ft.pts4 });
+        }
+      });
+
+      disamina.associativeSubtotal = disamina.associativeBreakdown.reduce((sum, item) => sum + item.pts, 0);
+
+      // Moltiplicativo: Criccone (3 o più cricche raddoppiano)
+      if (disamina.associativeBreakdown.length >= 3) {
+        disamina.hasCriccone = true;
+        disamina.associativeTotal = disamina.associativeSubtotal * 2;
+      } else {
+        disamina.associativeTotal = disamina.associativeSubtotal;
+      }
+
+      /* -------------------------------------------------------------
+         C. COMBINAZIONI SEQUENZIALI & CONTATORI (Regole 2.2.2 - 2.4)
+         - I Contatori (Bégato, Matto) "vanno in terza" e si aggregano.
+         - Proprietà fondamentale: i contatori NON si esauriscono e possono
+           essere riutilizzati per tutte le sequenze aperte contemporaneamente.
+         ------------------------------------------------------------- */
+      const contatoriCount = (cardIdSet.has('t_begato') ? 1 : 0) + (cardIdSet.has('t_matto') ? 1 : 0);
+      const contatoriNames = [];
+      if (cardIdSet.has('t_begato')) contatoriNames.push('Bégato');
+      if (cardIdSet.has('t_matto')) contatoriNames.push('Matto');
+
+      // 1. Sequenze di Semi (Re, Regina, Cavallo, Fante + Asso aggregato)
+      const suitsList = ['danari', 'coppe', 'spade', 'bastoni'];
+      suitsList.forEach(suitName => {
+        const hasRe = cardIdSet.has(`${suitName[0]}_re`);
+        if (!hasRe) return; // Capostipite indispensabile
+
+        const hasRegina = cardIdSet.has(`${suitName[0]}_regina`);
+        const hasCavallo = cardIdSet.has(`${suitName[0]}_cavallo`);
+        const hasFante = cardIdSet.has(`${suitName[0]}_fante`);
+        const hasAsso = cardIdSet.has(`${suitName[0]}_asso`);
+
+        const naturalFigs = [hasRe, hasRegina, hasCavallo, hasFante].filter(Boolean).length;
+        const suitLabel = suitName.charAt(0).toUpperCase() + suitName.slice(1);
+
+        if (naturalFigs >= 3) {
+          // Sequenza pura o naturale (10 pt per 3, 15 pt per 4)
+          let pts = (naturalFigs === 3) ? 10 : 15;
+          let note = `Sequenza naturale di ${suitLabel} (${naturalFigs} Figure)`;
+          if (naturalFigs === 4 && hasAsso) {
+            pts += 5; // Asso aggregato alla combinazione di figure completa
+            note += ' + Asso aggregato (+5 pt)';
+          }
+          disamina.sequentialBreakdown.push({ name: `Sequenza ${suitLabel}`, note: note, pts: pts });
+        } else if (naturalFigs === 2 && contatoriCount >= 1) {
+          // Re + 1 Figura + 1 o 2 Contatori
+          if (contatoriCount === 1) {
+            disamina.sequentialBreakdown.push({
+              name: `Sequenza ${suitLabel} con Contatore`,
+              note: `Re + 1 Figura + 1 Contatore (${contatoriNames.join(', ')})`,
+              pts: 10
+            });
+          } else if (contatoriCount === 2) {
+            disamina.sequentialBreakdown.push({
+              name: `Sequenza ${suitLabel} con 2 Contatori`,
+              note: `Re + 1 Figura + 2 Contatori (Bégato e Matto)`,
+              pts: 15
+            });
+          }
+        }
+      });
+
+      // 2. Famiglia degli Assi (Senza capostipite)
+      const naturalAssi = picked.filter(c => c.isAsso).length;
+      if (naturalAssi >= 3) {
+        disamina.sequentialBreakdown.push({
+          name: `Sequenza di Assi`,
+          note: `${naturalAssi} Assi`,
+          pts: naturalAssi === 3 ? 10 : 15
+        });
+      } else if (naturalAssi === 2 && contatoriCount >= 1) {
+        disamina.sequentialBreakdown.push({
+          name: `Sequenza di Assi con Contatore`,
+          note: `2 Assi + Contatore in terza (${contatoriNames[0]})`,
+          pts: 10
+        });
+      }
+
+      // 3. Famiglia dei Mori (Senza capostipite)
+      const naturalMori = picked.filter(c => c.isMoro).length;
+      if (naturalMori >= 3) {
+        disamina.sequentialBreakdown.push({
+          name: `Sequenza di Mori`,
+          note: `${naturalMori} Mori`,
+          pts: naturalMori === 3 ? 10 : 15
+        });
+      } else if (naturalMori === 2 && contatoriCount >= 1) {
+        disamina.sequentialBreakdown.push({
+          name: `Sequenza di Mori con Contatore`,
+          note: `2 Mori + Contatore in terza (${contatoriNames[0]})`,
+          pts: 10
+        });
+      }
+
+      // 4. Famiglia della Grande & Scavezzo
+      const hasAngelo = cardIdSet.has('t_angelo');
+      if (hasAngelo) {
+        const hasMondo = cardIdSet.has('t_mondo');
+        const hasSole = cardIdSet.has('t_sole');
+        const hasLuna = cardIdSet.has('t_luna');
+        const grandeNumeri = [hasAngelo, hasMondo, hasSole, hasLuna].filter(Boolean).length;
+
+        let scavezzoCount = 0;
+        let chainLen = 0;
+        let currentNeed = 16;
+        let availableJokers = contatoriCount;
+
+        // Scavezzo aggregato: dal 16 a scendere fino al 5
+        while (currentNeed >= 5) {
+          if (cardIdSet.has(`t_${currentNeed}`)) {
+            chainLen++;
+            scavezzoCount++;
+            currentNeed--;
+          } else if (availableJokers > 0) {
+            // Contatore sostituisce un numero di Scavezzo mancante (non 2 consecutivi)
+            availableJokers--;
+            chainLen++;
+            scavezzoCount++;
+            currentNeed--;
+            if (currentNeed >= 5 && !cardIdSet.has(`t_${currentNeed}`)) {
+              break; // Divieto di sostituire due numeri consecutivi
+            }
+          } else {
+            break;
+          }
+        }
+
+        if (grandeNumeri >= 3) {
+          let basePts = (grandeNumeri === 3) ? 10 : 15;
+          let note = `${grandeNumeri} Numeri della Grande`;
+          if (scavezzoCount > 0) {
+            basePts += (scavezzoCount * 5);
+            note += ` + ${scavezzoCount} carte di Scavezzo fino al ${currentNeed + 1} (+${scavezzoCount * 5} pt)`;
+          }
+          if (chainLen === 12 && grandeNumeri === 4 && cardIdSet.has('t_begato')) {
+            note = 'GRANDE LUNGA FINO AI CALZETTINI (Completa dall\'Angelo al Bégato)';
+          }
+          disamina.sequentialBreakdown.push({ name: 'La Grande & Scavezzo', note: note, pts: basePts });
+        } else if (grandeNumeri === 2 && contatoriCount >= 1) {
+          let pts = contatoriCount === 1 ? 10 : 15;
+          let note = `Angelo + 1 Grande + ${contatoriCount} Contatore/i`;
+          if (scavezzoCount > 0) {
+            pts += (scavezzoCount * 5);
+            note += ` + ${scavezzoCount} carte di Scavezzo (+${scavezzoCount * 5} pt)`;
+          }
+          disamina.sequentialBreakdown.push({ name: 'La Grande con Contatori', note: note, pts: pts });
+        }
+      }
+
+      disamina.sequentialSubtotal = disamina.sequentialBreakdown.reduce((sum, item) => sum + item.pts, 0);
+
+      // Regola Moltiplicativa Sequenziale (Sequenza): 3+ sequenziali raddoppiano
+      if (disamina.sequentialBreakdown.length >= 3) {
+        disamina.hasSequenzaMult = true;
+        disamina.sequentialTotal = disamina.sequentialSubtotal * 2;
+      } else {
+        disamina.sequentialTotal = disamina.sequentialSubtotal;
+      }
+
+      // TOTALE COMPLESSIVO (Scartini + Cricche + Sequenze + Ultima Presa)
+      disamina.grandTotal = disamina.scartiniTotal + disamina.associativeTotal + disamina.sequentialTotal + disamina.ultimaPresaPoints;
+
+      return disamina;
+    }
+
+    /* =====================================================================
+       4. UI UPDATE & DISAMINA RENDERING
+       ===================================================================== */
+    function updateUI() {
+      // Refresh cards style in grid
+      CARDS.forEach(c => {
+        const el = document.getElementById(`card-btn-${c.id}`);
+        if (!el) return;
+        const isSelected = selectedCards.has(c.id);
+        if (isSelected) {
+          el.className = el.className.replace(
+            /bg-felt-900\/60 border-white\/10 opacity-80/,
+            'bg-gradient-to-b from-felt-700 to-felt-800 border-gold-400 shadow-md ring-2 ring-gold-400/50 scale-[1.02]'
+          );
+        } else {
+          el.className = el.className.replace(
+            /bg-gradient-to-b from-felt-700 to-felt-800 border-gold-400 shadow-md ring-2 ring-gold-400\/50 scale-\[1.02\]/,
+            'bg-felt-900/60 border-white/10 opacity-80'
+          );
+        }
+        const checkIcon = el.querySelector('.status-check-circle');
+        if (checkIcon) {
+          checkIcon.className = `status-check-circle w-4 h-4 rounded-full flex items-center justify-center border transition-all ${
+            isSelected ? 'bg-gold-500 border-gold-300 text-felt-950 font-bold' : 'border-white/20'
+          }`;
+          checkIcon.innerHTML = isSelected ? '<i class="ph-bold ph-check text-[10px]"></i>' : '';
+        }
+      });
+
+      // Recalculate score
+      const calcResult = calculatePoints(selectedCards);
+
+      // Top sticky dashboard
+      document.getElementById('display-total-points').innerText = calcResult.grandTotal;
+      document.getElementById('display-card-count').innerHTML = `${selectedCards.size} <span class="text-[10px] text-parchment-300/50">/62</span>`;
+      document.getElementById('display-scartini-pts').innerText = `${calcResult.scartiniTotal} pt`;
+      document.getElementById('display-comb-pts').innerText = `${calcResult.associativeTotal + calcResult.sequentialTotal} pt`;
+      document.getElementById('display-ultima-pts').innerText = `+${calcResult.ultimaPresaPoints} pt`;
+
+      // Disamina content rendering
+      renderDisamina(calcResult);
+    }
+
+    function renderDisamina(result) {
+      const container = document.getElementById('disamina-content');
+      const badge = document.getElementById('disamina-badge');
+
+      if (selectedCards.size === 0 && !hasUltimaPresa) {
+        badge.innerText = '0 Voci';
+        container.innerHTML = `
+          <div class="text-center py-6 text-parchment-300/60 space-y-1">
+            <i class="ph ph-hand-pointing text-2xl text-gold-400"></i>
+            <p class="text-xs italic">Seleziona le carte nel tallone di presa per visualizzare l'analisi dettagliata.</p>
+          </div>
+        `;
+        return;
+      }
+
+      const totalItems = (result.scartiniTotal > 0 ? 1 : 0) + 
+                         result.associativeBreakdown.length + 
+                         result.sequentialBreakdown.length +
+                         (result.ultimaPresaPoints > 0 ? 1 : 0);
+      badge.innerText = `${totalItems} Voci`;
+
+      let html = `<div class="space-y-4">`;
+
+      // 1. Sezione Scartini
+      if (result.scartiniTotal > 0) {
+        const sb = result.scartiniBreakdown;
+        html += `
+          <div class="bg-felt-950/80 rounded-xl p-3 border border-white/5 space-y-1.5">
+            <div class="flex items-center justify-between pb-1 border-b border-white/10">
+              <span class="font-serif font-bold text-gold-400 flex items-center gap-1.5">
+                <i class="ph ph-intersect-three"></i> 1. Conto degli Scartini (Regola 2.1)
+              </span>
+              <span class="font-mono font-bold text-gold-300 text-sm">${result.scartiniTotal} pt</span>
+            </div>
+            <p class="text-parchment-200 text-xs">
+              • <strong>${sb.pairedCount} Carte di Valore</strong> abbinate a <strong>${sb.pairedCount} Scartini</strong>.
+            </p>
+            ${sb.extraScartini > 0 ? `
+              <p class="text-parchment-300/80 text-[11px]">
+                • Eccedenza Scartini: ${sb.extraScartini} carte &rarr; ${sb.extraScartiniPairs} coppia/e da 1 pt ciascuna (+${sb.extraScartiniPairs} pt).
+              </p>
+            ` : ''}
+            ${sb.extraValCardsCount > 0 ? `
+              <p class="text-parchment-300/80 text-[11px]">
+                • Eccedenza Figure/Tarocchi spaiati: calcolati con la formula di riduzione (+${sb.extraValPoints} pt).
+              </p>
+            ` : ''}
+          </div>
+        `;
+      }
+
+      // 2. Sezione Cricche
+      if (result.associativeBreakdown.length > 0) {
+        html += `
+          <div class="bg-felt-950/80 rounded-xl p-3 border border-white/5 space-y-2">
+            <div class="flex items-center justify-between pb-1 border-b border-white/10">
+              <span class="font-serif font-bold text-gold-400 flex items-center gap-1.5">
+                <i class="ph ph-crown"></i> 2. Combinazioni Associative (Cricche)
+              </span>
+              <span class="font-mono font-bold text-gold-300 text-sm">${result.associativeTotal} pt</span>
+            </div>
+            <div class="space-y-1 text-xs">
+        `;
+        result.associativeBreakdown.forEach(item => {
+          html += `
+            <div class="flex items-center justify-between py-0.5">
+              <span class="text-parchment-200"><strong>${item.name}:</strong> <span class="text-parchment-300/70 text-[11px]">(${item.cards.join(', ')})</span></span>
+              <span class="font-mono font-semibold text-emerald-400">+${item.pts} pt</span>
+            </div>
+          `;
+        });
+        if (result.hasCriccone) {
+          html += `
+            <div class="bg-gold-500/20 border border-gold-400/40 p-2 rounded-lg flex items-center justify-between text-gold-300 mt-1">
+              <span class="font-serif font-bold flex items-center gap-1">
+                <i class="ph-bold ph-lightning"></i> CRICCONE ATTIVATO (3+ Cricche)
+              </span>
+              <span class="font-mono font-bold">Raddoppio: x2 (${result.associativeTotal} pt)</span>
+            </div>
+          `;
+        }
+        html += `</div></div>`;
+      }
+
+      // 3. Sezione Sequenziali
+      if (result.sequentialBreakdown.length > 0) {
+        html += `
+          <div class="bg-felt-950/80 rounded-xl p-3 border border-white/5 space-y-2">
+            <div class="flex items-center justify-between pb-1 border-b border-white/10">
+              <span class="font-serif font-bold text-gold-400 flex items-center gap-1.5">
+                <i class="ph ph-stairs"></i> 3. Combinazioni Sequenziali & Contatori
+              </span>
+              <span class="font-mono font-bold text-gold-300 text-sm">${result.sequentialTotal} pt</span>
+            </div>
+            <div class="space-y-1 text-xs">
+        `;
+        result.sequentialBreakdown.forEach(item => {
+          html += `
+            <div class="flex items-center justify-between py-0.5">
+              <div>
+                <span class="font-semibold text-parchment-200">${item.name}</span>
+                <span class="block text-[11px] text-parchment-300/70">${item.note}</span>
+              </div>
+              <span class="font-mono font-semibold text-emerald-400">+${item.pts} pt</span>
+            </div>
+          `;
+        });
+        if (result.hasSequenzaMult) {
+          html += `
+            <div class="bg-gold-500/20 border border-gold-400/40 p-2 rounded-lg flex items-center justify-between text-gold-300 mt-1">
+              <span class="font-serif font-bold flex items-center gap-1">
+                <i class="ph-bold ph-lightning"></i> SEQUENZA MOLTIPLICATIVA ATTIVATA (3+ Sequenziali)
+              </span>
+              <span class="font-mono font-bold">Raddoppio: x2 (${result.sequentialTotal} pt)</span>
+            </div>
+          `;
+        }
+        html += `</div></div>`;
+      }
+
+      // 4. Ultima Presa
+      if (result.ultimaPresaPoints > 0) {
+        html += `
+          <div class="bg-felt-950/80 rounded-xl p-3 border border-amber-400/40">
+            <div class="flex items-center justify-between pb-1.5 border-b border-white/10 mb-1.5">
+              <span class="font-serif font-bold text-amber-300 flex items-center gap-1.5">
+                <span>🏆</span> 4. Bonus Ultima Presa (Mano Finale)
+              </span>
+              <span class="font-mono font-bold text-amber-300 text-sm">+6 Punti</span>
+            </div>
+            <p class="text-xs text-parchment-200 leading-relaxed">
+              <strong>+6 punti addizionali:</strong> Assegnati per aver vinto la presa dell'ultima mano di gioco della smazzata nel regolamento tradizionale del Tarocchino Bolognese.
+            </p>
+          </div>
+        `;
+      }
+
+      // Totale Finale
+      const detailParts = [];
+      if (result.scartiniTotal > 0) detailParts.push(`Scartini (${result.scartiniTotal})`);
+      if (result.associativeTotal > 0) detailParts.push(`Cricche (${result.associativeTotal})`);
+      if (result.sequentialTotal > 0) detailParts.push(`Sequenze (${result.sequentialTotal})`);
+      if (result.ultimaPresaPoints > 0) detailParts.push(`🏆 Ultima Presa (+${result.ultimaPresaPoints})`);
+      const breakdownText = detailParts.length > 0 ? detailParts.join(' + ') : 'Nessun punto accumulato';
+
+      html += `
+        <div class="bg-gradient-to-r from-felt-700 to-felt-800 p-3.5 rounded-xl border border-gold-400/40 flex items-center justify-between">
+          <div>
+            <span class="text-xs font-serif font-bold text-parchment-100 block">Totale Finale della Smazzata:</span>
+            <span class="text-[11px] text-parchment-300/80">${breakdownText}</span>
+          </div>
+          <div class="text-2xl font-serif font-extrabold text-gold-300 font-mono">
+            = ${result.grandTotal} pt
+          </div>
+        </div>
+      `;
+
+      html += `</div>`;
+      container.innerHTML = html;
+    }
+
+    function toggleDisamina() {
+      const body = document.getElementById('disamina-body');
+      const arrow = document.getElementById('disamina-arrow');
+      isDisaminaOpen = !isDisaminaOpen;
+      if (isDisaminaOpen) {
+        body.classList.remove('hidden');
+        arrow.classList.add('rotate-180');
+      } else {
+        body.classList.add('hidden');
+        arrow.classList.remove('rotate-180');
+      }
+    }
+
+    /* =====================================================================
+       5. MATCH SCOREBOARD (SEGNAPUNTI PARTITA)
+       ===================================================================== */
+    function initScoreboard() {
+      changeMatchSettings(false);
+    }
+
+    function changeMatchSettings(resetScores = true) {
+      const targetVal = parseInt(document.getElementById('match-target-select').value, 10);
+      const formatVal = document.getElementById('match-format-select').value;
+
+      matchConfig.target = targetVal;
+      matchConfig.format = formatVal;
+
+      document.getElementById('header-match-pill').innerText = `${targetVal}`;
+
+      let teams = [];
+      if (formatVal === 'teams4') {
+        teams = [
+          { id: 't1', name: 'Coppia A (Noi)', score: 0 },
+          { id: 't2', name: 'Coppia B (Loro)', score: 0 }
+        ];
+      } else if (formatVal === 'players2') {
+        teams = [
+          { id: 'p1', name: 'Giocatore 1', score: 0 },
+          { id: 'p2', name: 'Giocatore 2', score: 0 }
+        ];
+      } else if (formatVal === 'players3') {
+        teams = [
+          { id: 'p1', name: 'Giocatore 1', score: 0 },
+          { id: 'p2', name: 'Giocatore 2', score: 0 },
+          { id: 'p3', name: 'Giocatore 3', score: 0 }
+        ];
+      }
+
+      if (resetScores) {
+        matchConfig.teams = teams;
+        matchRounds = [];
+      } else {
+        matchConfig.teams = teams.map((t, idx) => {
+          if (matchConfig.teams && matchConfig.teams[idx]) {
+            t.score = matchConfig.teams[idx].score;
+          }
+          return t;
+        });
+      }
+
+      renderScoreboard();
+      populateTeamSelects();
+    }
+
+    function renderScoreboard() {
+      const container = document.getElementById('teams-scoreboard-grid');
+      container.innerHTML = '';
+
+      matchConfig.teams.forEach(team => {
+        const pct = Math.min(100, Math.round((team.score / matchConfig.target) * 100));
+        const isWinner = team.score >= matchConfig.target;
+
+        const card = document.createElement('div');
+        card.className = `bg-felt-950/80 rounded-2xl p-4 border transition-all ${
+          isWinner ? 'border-amber-400 ring-2 ring-amber-400/50 shadow-2xl' : 'border-gold-500/30'
+        }`;
+
+        card.innerHTML = `
+          <div class="flex items-center justify-between mb-2">
+            <h4 class="font-serif font-bold text-base text-gold-300 flex items-center gap-2">
+              <span class="w-3 h-3 rounded-full ${isWinner ? 'bg-amber-400 animate-ping' : 'bg-gold-500'}"></span>
+              ${team.name}
+              ${isWinner ? '<span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-400 text-felt-950 font-bold uppercase tracking-wider">Vittoria!</span>' : ''}
+            </h4>
+            <span class="font-mono text-2xl font-extrabold ${isWinner ? 'text-amber-300' : 'text-parchment-100'}">
+              ${team.score} <span class="text-xs text-parchment-300/60 font-sans">/ ${matchConfig.target}</span>
+            </span>
+          </div>
+
+          <!-- Progress Bar -->
+          <div class="w-full bg-felt-900 rounded-full h-3 border border-white/10 overflow-hidden relative mb-2">
+            <div class="h-full bg-gradient-to-r from-gold-600 to-gold-400 transition-all duration-500 rounded-full" style="width: ${pct}%"></div>
+          </div>
+          <div class="flex items-center justify-between text-[11px] text-parchment-300/70">
+            <span>Avanzamento: ${pct}%</span>
+            <span>Mancano: ${Math.max(0, matchConfig.target - team.score)} pt</span>
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const historyContainer = document.getElementById('match-history-list');
+      const countEl = document.getElementById('history-round-count');
+      countEl.innerText = `${matchRounds.length} Smazzate`;
+
+      if (matchRounds.length === 0) {
+        historyContainer.innerHTML = `
+          <div class="text-center py-6 text-parchment-300/50 text-xs italic">
+            Nessuna smazzata registrata finora. Usa "Segna a Partita" dal calcolatore o inserisci i punti manuali.
+          </div>
+        `;
+        return;
+      }
+
+      historyContainer.innerHTML = '';
+      matchRounds.slice().reverse().forEach((round, revIdx) => {
+        const actualIdx = matchRounds.length - 1 - revIdx;
+        const roundEl = document.createElement('div');
+        roundEl.className = 'flex items-center justify-between p-2.5 rounded-xl bg-felt-950/60 border border-white/5 text-xs';
+        roundEl.innerHTML = `
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-lg bg-gold-500/20 text-gold-300 text-[11px] font-mono font-bold flex items-center justify-center">
+              #${actualIdx + 1}
+            </span>
+            <div>
+              <span class="font-bold text-parchment-100">${round.teamName}</span>
+              <span class="text-[10px] text-parchment-300/60 block">${round.note}</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="font-mono font-bold text-sm text-gold-300">+${round.pts} pt</span>
+            <button onclick="removeRound(${actualIdx})" class="text-red-400 hover:text-red-300 p-1 rounded" title="Elimina smazzata">
+              <i class="ph ph-trash"></i>
+            </button>
+          </div>
+        `;
+        historyContainer.appendChild(roundEl);
+      });
+    }
+
+    function recordHand(teamId, points, note = 'Dal Calcolatore') {
+      const team = matchConfig.teams.find(t => t.id === teamId);
+      if (!team) return;
+      team.score += points;
+      matchRounds.push({
+        teamId: team.id,
+        teamName: team.name,
+        pts: points,
+        note: note,
+        timestamp: new Date()
+      });
+      renderScoreboard();
+      showToast(`+${points} pt assegnati a ${team.name}`);
+
+      if (team.score >= matchConfig.target) {
+        showToast(`🎉 ${team.name} ha raggiunto il traguardo di ${matchConfig.target} Punti!`);
+      }
+    }
+
+    function removeRound(index) {
+      if (index >= 0 && index < matchRounds.length) {
+        const round = matchRounds[index];
+        const team = matchConfig.teams.find(t => t.id === round.teamId);
+        if (team) {
+          team.score = Math.max(0, team.score - round.pts);
+        }
+        matchRounds.splice(index, 1);
+        renderScoreboard();
+        showToast("Smazzata rimossa");
+      }
+    }
+
+    function populateTeamSelects() {
+      const modalSelect = document.getElementById('modal-team-select');
+      const manualSelect = document.getElementById('manual-team-select');
+      if (!modalSelect || !manualSelect) return;
+
+      modalSelect.innerHTML = '';
+      manualSelect.innerHTML = '';
+
+      matchConfig.teams.forEach(t => {
+        const opt1 = new Option(t.name, t.id);
+        const opt2 = new Option(t.name, t.id);
+        modalSelect.appendChild(opt1);
+        manualSelect.appendChild(opt2);
+      });
+    }
+
+    function resetMatchPrompt() {
+      if (confirm('Vuoi azzerare la partita corrente e ricominciare?')) {
+        changeMatchSettings(true);
+        showToast("Nuova partita avviata");
+      }
+    }
+
+    /* Modal Handlers */
+    function sendToMatchModal() {
+      const calcResult = calculatePoints(selectedCards);
+      if (calcResult.grandTotal === 0 && selectedCards.size === 0 && !hasUltimaPresa) {
+        showToast("Nessun punto o carta selezionata!");
+        return;
+      }
+      document.getElementById('modal-pts-display').innerText = calcResult.grandTotal;
+      document.getElementById('modal-send-match').classList.remove('hidden');
+      document.getElementById('modal-send-match').classList.add('flex');
+    }
+
+    function closeSendToMatchModal() {
+      document.getElementById('modal-send-match').classList.add('hidden');
+      document.getElementById('modal-send-match').classList.remove('flex');
+    }
+
+    function confirmSendToMatch() {
+      const calcResult = calculatePoints(selectedCards);
+      const teamId = document.getElementById('modal-team-select').value;
+      const noteExtra = hasUltimaPresa ? ' • 🏆 Ultima Presa (+6)' : '';
+      recordHand(teamId, calcResult.grandTotal, `Tallone (${selectedCards.size} carte${noteExtra})`);
+      closeSendToMatchModal();
+      clearSelection();
+      switchTab('match');
+    }
+
+    function openManualAddModal() {
+      document.getElementById('manual-pts-input').value = 0;
+      document.getElementById('manual-note-input').value = '';
+      document.getElementById('modal-manual-add').classList.remove('hidden');
+      document.getElementById('modal-manual-add').classList.add('flex');
+    }
+
+    function closeManualAddModal() {
+      document.getElementById('modal-manual-add').classList.add('hidden');
+      document.getElementById('modal-manual-add').classList.remove('flex');
+    }
+
+    function confirmManualAdd() {
+      const teamId = document.getElementById('manual-team-select').value;
+      const pts = parseInt(document.getElementById('manual-pts-input').value, 10) || 0;
+      const note = document.getElementById('manual-note-input').value.trim() || 'Inserimento manuale';
+      if (pts !== 0) {
+        recordHand(teamId, pts, note);
+      }
+      closeManualAddModal();
+    }
+
+    /* =====================================================================
+       6. TAB NAVIGATION & TOAST UTILITIES
+       ===================================================================== */
+    function switchTab(tab) {
+      document.getElementById('tab-calc').classList.add('hidden');
+      document.getElementById('tab-match').classList.add('hidden');
+      document.getElementById('tab-rules').classList.add('hidden');
+
+      const btnCalc = document.getElementById('nav-calc-btn');
+      const btnMatch = document.getElementById('nav-match-btn');
+      const btnRules = document.getElementById('nav-rules-btn');
+
+      [btnCalc, btnMatch, btnRules].forEach(b => {
+        b.className = 'px-3 py-1.5 rounded-lg transition-all text-parchment-300 hover:text-white flex items-center gap-1.5';
+      });
+
+      if (tab === 'calc') {
+        document.getElementById('tab-calc').classList.remove('hidden');
+        btnCalc.className = 'px-3 py-1.5 rounded-lg transition-all text-gold-300 bg-felt-800 shadow font-semibold flex items-center gap-1.5';
+      } else if (tab === 'match') {
+        document.getElementById('tab-match').classList.remove('hidden');
+        btnMatch.className = 'px-3 py-1.5 rounded-lg transition-all text-gold-300 bg-felt-800 shadow font-semibold flex items-center gap-1.5';
+      } else if (tab === 'rules') {
+        document.getElementById('tab-rules').classList.remove('hidden');
+        btnRules.className = 'px-3 py-1.5 rounded-lg transition-all text-gold-300 bg-felt-800 shadow font-semibold flex items-center gap-1.5';
+      }
+    }
+
+    let toastTimeout = null;
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      const text = document.getElementById('toast-message');
+      if (!toast || !text) return;
+
+      text.innerText = message;
+      toast.classList.remove('opacity-0', 'translate-y-3');
+      toast.classList.add('opacity-100', 'translate-y-0');
+
+      if (toastTimeout) clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove('opacity-100', 'translate-y-0');
+        toast.classList.add('opacity-0', 'translate-y-3');
+      }, 2600);
+    }
+
+    /* =====================================================================
+       7. INITIALIZATION
+       ===================================================================== */
+    function buildCardsGrid() {
+      const grid = document.getElementById('cards-grid');
+      grid.innerHTML = '';
+
+      CARDS.forEach(card => {
+        const btn = document.createElement('button');
+        btn.id = `card-btn-${card.id}`;
+        btn.onclick = () => toggleCard(card.id);
+
+        let suitSymbol = '✨';
+        if (card.suit === 'danari') suitSymbol = '🟡';
+        else if (card.suit === 'coppe') suitSymbol = '🍷';
+        else if (card.suit === 'spade') suitSymbol = '⚔️';
+        else if (card.suit === 'bastoni') suitSymbol = '🪵';
+
+        btn.className = 'card-tap-target text-left p-2.5 rounded-xl border border-white/10 bg-felt-900/60 opacity-80 hover:opacity-100 transition-all flex flex-col justify-between gap-1 relative overflow-hidden';
+
+        btn.innerHTML = `
+          <div class="flex items-center justify-between w-full">
+            <span class="text-xs font-mono font-bold text-gold-400 flex items-center gap-1">
+              <span>${suitSymbol}</span>
+              ${card.rankValue > 1 ? `<span class="text-[10px] bg-gold-500/20 px-1 py-0.2 rounded border border-gold-400/30">${card.rankValue}pt</span>` : ''}
+            </span>
+            <div class="status-check-circle w-4 h-4 rounded-full flex items-center justify-center border border-white/20 transition-all"></div>
+          </div>
+          <div class="mt-1">
+            <span class="text-xs font-semibold text-parchment-100 block truncate leading-tight">${card.name}</span>
+            <span class="text-[9px] text-parchment-300/60 uppercase tracking-wider block">${card.badge || (card.isScartino ? 'Scartino' : 'Figura')}</span>
+          </div>
+        `;
+
+        grid.appendChild(btn);
+      });
+    }
+
+    /* =====================================================================
+       8. PWA MANIFEST & SERVICE WORKER REGISTRATION (OFFLINE SUPPORT)
+       ===================================================================== */
+    let deferredPrompt = null;
+
+    function initPWA() {
+      // 1. Generate Dynamic Inline Manifest (No external json file required)
+      const svgIconData = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='38' fill='%23071813'/><circle cx='96' cy='96' r='72' fill='%23133a2e' stroke='%23facc15' stroke-width='8'/><text x='96' y='122' font-size='85' text-anchor='middle'>🃏</text></svg>";
+      
+      const manifestObject = {
+        name: "Tarocchino Bolognese",
+        short_name: "Tarocchino",
+        description: "Calcolatore Tallone di Presa e Segnapunti per Tarocchino Bolognese",
+        start_url: "./",
+        display: "standalone",
+        orientation: "portrait",
+        background_color: "#071813",
+        theme_color: "#0d2820",
+        icons: [
+          {
+            src: svgIconData,
+            sizes: "192x192",
+            type: "image/svg+xml",
+            purpose: "any maskable"
+          },
+          {
+            src: svgIconData,
+            sizes: "512x512",
+            type: "image/svg+xml",
+            purpose: "any maskable"
+          }
+        ]
+      };
+
+      const manifestBlob = new Blob([JSON.stringify(manifestObject)], { type: 'application/manifest+json' });
+      const manifestUrl = URL.createObjectURL(manifestBlob);
+      document.getElementById('manifest-placeholder').setAttribute('href', manifestUrl);
+
+      // 2. Register Service Worker for offline capability
+      if ('serviceWorker' in navigator) {
+        const swScript = `
+          const CACHE_NAME = 'tarocchino-bolognese-v1';
+          self.addEventListener('install', (event) => {
+            self.skipWaiting();
+          });
+          self.addEventListener('activate', (event) => {
+            event.waitUntil(self.clients.claim());
+          });
+          self.addEventListener('fetch', (event) => {
+            if (event.request.method !== 'GET') return;
+            event.respondWith(
+              fetch(event.request)
+                .then((response) => {
+                  if (response && response.status === 200) {
+                    const responseClone = response.clone();
+                    caches.open(CACHE_NAME).then((cache) => {
+                      cache.put(event.request, responseClone);
+                    });
+                  }
+                  return response;
+                })
+                .catch(() => caches.match(event.request))
+            );
+          });
+        `;
+        const swBlob = new Blob([swScript], { type: 'application/javascript' });
+        const swUrl = URL.createObjectURL(swBlob);
+
+        navigator.serviceWorker.register(swUrl)
+          .catch(() => {
+            // Service workers might be limited when running locally via file://
+          });
+      }
+
+      // 3. Listen for browser install prompt
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        const installBtn = document.getElementById('pwa-install-btn');
+        if (installBtn) {
+          installBtn.classList.remove('hidden');
+          installBtn.classList.add('flex');
+        }
+      });
+
+      window.addEventListener('appinstalled', () => {
+        deferredPrompt = null;
+        const installBtn = document.getElementById('pwa-install-btn');
+        if (installBtn) {
+          installBtn.classList.add('hidden');
+          installBtn.classList.remove('flex');
+        }
+        showToast("App installata con successo!");
+      });
+    }
+
+    function triggerPWAInstall() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+          if (choiceResult.outcome === 'accepted') {
+            showToast("Installazione avviata...");
+          }
+          deferredPrompt = null;
+        });
+      } else {
+        showToast("Tocca i 3 puntini del browser > 'Aggiungi a schermata Home'");
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initPWA();
+      buildCardsGrid();
+      initScoreboard();
+      updateUI();
+    });
+  </script>
+</body>
+</html>
